@@ -37,7 +37,7 @@ def fetch_sources(sources, dialog, raise_exceptions=False):
                 fetched_sources.append(("%03d | %s%s" %
                                        (len(fetched_sources) + 1, name, label),
                                         fetched_url))
-                # Stops at 1 source if autoplay. Never stops it if limitsources is 0
+                # Stops at 1 source if autoplay
                 if "true" in autoplay and len(fetched_sources) == 1:
                     return dict(fetched_sources)
             dialog.update(int(i * factor))
