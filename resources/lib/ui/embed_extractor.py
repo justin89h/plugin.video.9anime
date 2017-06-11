@@ -5,11 +5,17 @@ import utils
 import http
 import json
 import time
+import xbmcaddon # for access to settings
 
 from NineAnimeTokenDecoder import NineAnimeTokenDecoder
 _EMBED_EXTRACTORS = {}
 
 def load_video_from_url(in_url):
+
+    settings = xbmcaddon.Addon(id='plugin.video.9anime')
+    sortres = settings.getSetting("sortres")
+    serverchoice = settings.getSetting("serverchoice")
+
     try:
         print "Probing source: %s" % in_url
         reqObj = http.send_request(in_url)
@@ -20,15 +26,28 @@ def load_video_from_url(in_url):
     except:
         raise
 
-    for extractor in _EMBED_EXTRACTORS.keys():
-        if in_url.startswith(extractor):
-            try:
-                return _EMBED_EXTRACTORS[extractor](url, page_content)
-            except Exception as e:
-                print "[*E*]: %s" % e
+    # Thanks to githubus11 for sorting function - unfortunately I can't get it working with OpenLoad involved
+    try:
+        for extractor in _EMBED_EXTRACTORS.keys():
+            if in_url.startswith(extractor):
+                extract_result =_EMBED_EXTRACTORS[extractor](url, page_content)
+                if serverchoice == "OpenLoad" or serverchoice == "All": # Skips Sorting function if OpenLoad needs to be included
+                    sorted_result = extract_result
+                elif "Best" in sortres:
+                    sorted_result = sorted(extract_result, key=__sort_extract_result, reverse=True)
+                else:
+                    sorted_result = sorted(extract_result, key=__sort_extract_result, reverse=False)
+                return sorted_result
+    except:
+        pass
 
     print "[*E*] No extractor found for %s" % url
     return None
+
+def __sort_extract_result(data):
+    first_el = data[0]
+    first_el_clean = ''.join(ch for ch in first_el if ch.isdigit())
+    return int(first_el_clean)
 
 def __set_referer(url):
     def f(req):
