@@ -37,8 +37,9 @@ def fetch_sources(sources, dialog, raise_exceptions=False):
                 fetched_sources.append(("%03d | %s%s" %
                                        (len(fetched_sources) + 1, name, label),
                                         fetched_url))
-                if "true" in autoplay: # Doesn't search for any more sources from url
-                    break
+                # Stops at 1 source if autoplay. Never stops it if limitsources is 0
+                if "true" in autoplay and len(fetched_sources) == 1:
+                    return dict(fetched_sources)
             dialog.update(int(i * factor))
         except Exception, e:
             print "[*E*] Skiping %s because Exception at parsing" % name
@@ -47,8 +48,6 @@ def fetch_sources(sources, dialog, raise_exceptions=False):
             else:
                 print e
 
-        if "true" in autoplay: # Doesn't search for any more urls
-            break
     if not len(fetched_sources):
         # No Valid sources found
         return None
