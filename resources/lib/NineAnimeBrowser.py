@@ -1,5 +1,6 @@
 import re
 import urllib
+import xbmcaddon # for access to settings
 from ui import utils
 from ui import BrowserBase
 from ui import http
@@ -21,11 +22,23 @@ class NineAnimeBrowser(BrowserBase.BrowserBase):
     _EPISODES_RE = \
     re.compile("<li>\s<a.+?data-id=\"(.+?)\" data-base=\"(\d+)\".+?data-title=\"(.+?)\".+?href=\"\/watch\/.+?\">.+?</li>",
                re.DOTALL)
-    _EPISODE_BOXES_RE = \
-    re.compile("<i\sclass=\"fa\sfa-server\"></i>\s(.+?)\s</label>\s<div.+?>(.+?)</div>",
-               re.DOTALL)
-
     _EPISODE_LINK_RE = re.compile("<li><div><a\shref=\"/([-\w\s\d]+?)/(\d+?)\"\sclass=\"anm_det_pop\"><strong>(.+?)</strong></a><i\sclass=\"anititle\">(.+?)</i>", re.DOTALL)
+
+    settings = xbmcaddon.Addon(id='plugin.video.9anime')
+    serverchoice = settings.getSetting("serverchoice")
+
+    if "OpenLoad" in serverchoice:
+        _EPISODE_BOXES_RE = \
+        re.compile("<i\sclass=\"fa\sfa-server\"></i>\s(OpenLoad)\s</label>\s<div.+?>(.+?)</div>",
+               re.DOTALL)
+    elif "MyCloud" in serverchoice:			   
+        _EPISODE_BOXES_RE = \
+        re.compile("<i\sclass=\"fa\sfa-server\"></i>\s(MyCloud)\s</label>\s<div.+?>(.+?)</div>",
+               re.DOTALL)
+    else:
+        _EPISODE_BOXES_RE = \
+        re.compile("<i\sclass=\"fa\sfa-server\"></i>\s(.+?)\s</label>\s<div.+?>(.+?)</div>",
+               re.DOTALL)
 
     def _parse_anime_view(self, res):
         name = res[2]
@@ -116,9 +129,14 @@ class NineAnimeBrowser(BrowserBase.BrowserBase):
         return self._process_anime_view(url, data, "genre/%s/%%d" % name, page)
 
     def get_anime_episodes(self, anime_url):
+        settings = xbmcaddon.Addon(id='plugin.video.9anime')
+        reverseorder = settings.getSetting("reverseorder")
+
         servers = self._get_anime_info(anime_url)
         mostSources = max(servers.iteritems(), key=lambda x: len(x[1]))[0]
         server = servers[mostSources]
+        if "Ascending" in reverseorder:
+            server = list(reversed(server)) # Reverses episode list if required from settings.xml
 
         return map(lambda x: utils.allocate_item(x['name'], x['url'], False, ''), server)
 
