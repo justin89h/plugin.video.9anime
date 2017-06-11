@@ -1,3 +1,4 @@
+import xbmcaddon # for access to settings
 from . import embed_extractor
 from http import URLError, send_request, head_request
 
@@ -12,6 +13,9 @@ def allocate_item(name, url, is_dir=False, image=''):
 def fetch_sources(sources, dialog, raise_exceptions=False):
     fetched_sources = []
     factor = 100.0 / len(sources)
+
+    settings = xbmcaddon.Addon(id='plugin.video.9anime')
+    autoplay = settings.getSetting("autoplay")	
 
     for i, do in enumerate(sources):
         if dialog.iscanceled():
@@ -33,6 +37,8 @@ def fetch_sources(sources, dialog, raise_exceptions=False):
                 fetched_sources.append(("%03d | %s%s" %
                                        (len(fetched_sources) + 1, name, label),
                                         fetched_url))
+                if "true" in autoplay: # Doesn't search for any more sources from url
+                    break
             dialog.update(int(i * factor))
         except Exception, e:
             print "[*E*] Skiping %s because Exception at parsing" % name
@@ -41,6 +47,8 @@ def fetch_sources(sources, dialog, raise_exceptions=False):
             else:
                 print e
 
+        if "true" in autoplay: # Doesn't search for any more urls
+            break
     if not len(fetched_sources):
         # No Valid sources found
         return None
